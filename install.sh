@@ -3,6 +3,9 @@
 # Updating server
 sudo apt-get update
 
+#Installing docker 
+sudo apt-get install docker.io
+
 # Installing Java version
 sudo apt install fontconfig openjdk-17-jre -y
 java -version
