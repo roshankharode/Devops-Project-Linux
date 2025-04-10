@@ -1,0 +1,58 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Updating Image') {
+      steps {
+        sh '''
+        sudo apt-get update
+        '''
+      }
+    }
+stage('installing Docker') {
+      steps {
+        sh '''
+        if ! command -v docker &> /dev/null; then sudo apt install -y docker.io; fi
+        sudo usermod -aG docker ubuntu
+        '''
+      }
+    }
+stage('Database installtion') {
+      steps {
+        sh '''
+        sudo docker network inspect wanderlust-network >/dev/null 2>&1 || sudo docker network create wanderlust-network
+        sudo docker rm -f mongodb redis-service backend frontend || true
+
+        sudo docker run -d --name mongodb --network wanderlust-network -p 27017:27017 mongo
+        sudo docker run -d --name redis-service --network wanderlust-network -p 6379:6379 redis
+
+        '''
+      }
+    }
+stage('Code Checkout -Git') {
+      steps {
+        sh '''
+        git clone https://github.com/roshankharode/Wanderlust-Mega-Project.git
+        '''
+      }
+    }
+    stage('Build Docker Image') {
+      steps {
+        sh '''
+          sudo docker build -t back:04 ./Wanderlust-Mega-Project/backend
+          sudo docker build -t frd:01 ./Wanderlust-Mega-Project/frontend
+        '''
+      }
+    }
+ stage('Running Container') {
+      steps {
+        sh '''
+          sudo docker run -d --name backend --network wanderlust-network -p 9090:9090 back:04
+          sudo docker run -d --name frontend --network wanderlust-network -p 5173:5173 frd:04
+        '''
+      }
+    }
+
+
+  }
+}
